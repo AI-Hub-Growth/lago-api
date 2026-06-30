@@ -17,7 +17,17 @@ module LagoUtils
     end
 
     def premium?
+      return true if premium_unlock_enabled?
+
       premium
+    end
+
+    def premium_unlock_enabled?
+      ActiveModel::Type::Boolean.new.cast(ENV["LAGO_UNLOCK_PREMIUM_FEATURES"])
+    end
+
+    def data_api_unlock_enabled?
+      ActiveModel::Type::Boolean.new.cast(ENV["LAGO_UNLOCK_DATA_API_FEATURES"])
     end
 
     private

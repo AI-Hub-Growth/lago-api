@@ -62,4 +62,23 @@ RSpec.describe LagoUtils::License do
       end
     end
   end
+
+  describe "#premium?" do
+    around do |example|
+      old_value = ENV["LAGO_UNLOCK_PREMIUM_FEATURES"]
+      example.run
+    ensure
+      ENV["LAGO_UNLOCK_PREMIUM_FEATURES"] = old_value
+    end
+
+    context "when premium features are unlocked locally" do
+      before do
+        ENV["LAGO_UNLOCK_PREMIUM_FEATURES"] = "true"
+      end
+
+      it "returns true" do
+        expect(license).to be_premium
+      end
+    end
+  end
 end

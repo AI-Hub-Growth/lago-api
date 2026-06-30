@@ -157,6 +157,12 @@ class Organization < ApplicationRecord
     revenue_recognition
   ].freeze
 
+  DATA_API_PREMIUM_INTEGRATIONS = %w[
+    analytics_dashboards
+    forecasted_usage
+    revenue_analytics
+  ].freeze
+
   SECURITY_LOGS_RETENTION_DAYS = 90
 
   INTEGRATIONS = (NON_PREMIUM_INTEGRATIONS + PREMIUM_INTEGRATIONS).freeze
@@ -189,14 +195,46 @@ class Organization < ApplicationRecord
   before_create :set_hmac_key
   after_create :generate_document_number_prefix
 
-  scope :with_any_premium_integrations, ->(names) { where("premium_integrations && ARRAY[?]::varchar[]", Array.wrap(names)) }
+  scope :with_any_premium_integrations, lambda { |names|
+    integrations = Array.wrap(names)
+
+    if License.premium_unlock_enabled?
+      (integrations & locally_unlocked_premium_integrations).present? ? all : none
+    else
+      where("premium_integrations && ARRAY[?]::varchar[]", integrations)
+    end
+  }
 
   PREMIUM_INTEGRATIONS.each do |premium_integration|
-    scope "with_#{premium_integration}_support", -> { where("? = ANY(premium_integrations)", premium_integration) }
+    scope "with_#{premium_integration}_support", lambda {
+      if License.premium_unlock_enabled?
+        locally_unlocked_premium_integrations.include?(premium_integration) ? all : none
+      else
+        where("? = ANY(premium_integrations)", premium_integration)
+      end
+    }
 
     define_method("#{premium_integration}_enabled?") do
       License.premium? && premium_integrations.include?(premium_integration)
     end
+  end
+
+  def premium_integrations
+    return self.class.locally_unlocked_premium_integrations if License.premium_unlock_enabled?
+
+    super
+  end
+
+  def feature_flags
+    return FeatureFlag::DEFINITION.keys if License.premium_unlock_enabled?
+
+    super
+  end
+
+  def self.locally_unlocked_premium_integrations
+    return PREMIUM_INTEGRATIONS if License.data_api_unlock_enabled?
+
+    PREMIUM_INTEGRATIONS - DATA_API_PREMIUM_INTEGRATIONS
   end
 
   def using_lifetime_usage?

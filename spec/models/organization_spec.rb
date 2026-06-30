@@ -305,6 +305,32 @@ RSpec.describe Organization do
       expect(described_class.with_any_premium_integrations(%w[okta from_email]).count).to eq(3)
       expect(described_class.with_any_premium_integrations(%w[okta salesforce]).count).to eq(4)
     end
+
+    context "when premium features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(false)
+      end
+
+      it "returns all organizations for a present premium integration filter" do
+        create(:organization, premium_integrations: %w[okta])
+        create(:organization, premium_integrations: [])
+
+        expect(described_class.with_any_premium_integrations("okta").count).to eq(2)
+      end
+
+      it "returns no organizations for an empty premium integration filter" do
+        create(:organization, premium_integrations: %w[okta])
+
+        expect(described_class.with_any_premium_integrations([])).to be_empty
+      end
+
+      it "returns no organizations for an integration requiring Data API" do
+        create(:organization, premium_integrations: [])
+
+        expect(described_class.with_any_premium_integrations("revenue_analytics")).to be_empty
+      end
+    end
   end
 
   describe "Premium integrations scopes" do
@@ -322,11 +348,91 @@ RSpec.describe Organization do
       expect(described_class.with_okta_support).to be_empty
       expect(described_class.with_progressive_billing_support).to eq([organization])
     end
+
+    context "when premium features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(false)
+      end
+
+      it "returns all organizations for locally unlocked premium integration scopes" do
+        create(:organization, premium_integrations: [])
+
+        Organization.locally_unlocked_premium_integrations.each do |integration|
+          expect(described_class.send("with_#{integration}_support").count).to eq(1)
+        end
+      end
+
+      it "returns no organizations for premium integration scopes that require Data API" do
+        create(:organization, premium_integrations: [])
+
+        Organization::DATA_API_PREMIUM_INTEGRATIONS.each do |integration|
+          expect(described_class.send("with_#{integration}_support")).to be_empty
+        end
+      end
+    end
   end
 
   describe "#premium_integrations_enabled?" do
     described_class::PREMIUM_INTEGRATIONS.each do |integration|
       it_behaves_like "organization premium feature", integration
+    end
+
+    context "when premium features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(false)
+      end
+
+      it "enables every locally unlocked premium integration" do
+        Organization.locally_unlocked_premium_integrations.each do |integration|
+          expect(organization.public_send("#{integration}_enabled?")).to eq(true)
+        end
+      end
+
+      it "does not enable integrations that require Data API" do
+        Organization::DATA_API_PREMIUM_INTEGRATIONS.each do |integration|
+          expect(organization.public_send("#{integration}_enabled?")).to eq(false)
+        end
+      end
+    end
+  end
+
+  describe "#premium_integrations" do
+    context "when premium features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(false)
+      end
+
+      it "returns locally unlocked premium integrations" do
+        expect(organization.premium_integrations)
+          .to match_array(described_class.locally_unlocked_premium_integrations)
+      end
+    end
+
+    context "when premium and Data API features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(true)
+      end
+
+      it "returns every premium integration" do
+        expect(organization.premium_integrations).to match_array(described_class::PREMIUM_INTEGRATIONS)
+      end
+    end
+  end
+
+  describe "#feature_flags" do
+    context "when premium features are unlocked locally" do
+      before do
+        allow(License).to receive(:premium_unlock_enabled?).and_return(true)
+        allow(License).to receive(:data_api_unlock_enabled?).and_return(false)
+      end
+
+      it "returns every configured feature flag" do
+        expect(organization.feature_flags).to match_array(FeatureFlag::DEFINITION.keys)
+      end
     end
   end
 
