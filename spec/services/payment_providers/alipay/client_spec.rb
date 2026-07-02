@@ -86,6 +86,58 @@ RSpec.describe PaymentProviders::Alipay::Client do
     end
   end
 
+  describe "#valid_notification?" do
+    let(:alipay_private_key) { OpenSSL::PKey::RSA.generate(2048) }
+    let(:payment_provider) do
+      create(
+        :alipay_provider,
+        app_id: "9021000158636207",
+        alipay_public_key: alipay_private_key.public_key.to_pem
+      )
+    end
+
+    it "verifies notifications with url-encoded passback params" do
+      params = {
+        "app_id" => payment_provider.app_id,
+        "charset" => "utf-8",
+        "notify_type" => "trade_status_sync",
+        "out_trade_no" => "inv_123",
+        "passback_params" => "%7B%22lago_payable_id%22%3A%22invoice-1%22%7D",
+        "subject" => "Qiniu - Invoice QIN-1",
+        "total_amount" => "9.68",
+        "trade_status" => "TRADE_SUCCESS",
+        "version" => "1.0"
+      }
+      canonical_payload = params.sort.map do |key, value|
+        "#{key}=#{CGI.unescape(value.to_s.gsub("+", "%2B"))}"
+      end.join("&")
+      params["sign"] = Base64.strict_encode64(
+        alipay_private_key.sign(OpenSSL::Digest::SHA256.new, canonical_payload)
+      )
+      params["sign_type"] = "RSA2"
+
+      expect(client.valid_notification?(params)).to be(true)
+    end
+
+    it "keeps literal plus signs when decoding notification values" do
+      params = {
+        "app_id" => payment_provider.app_id,
+        "charset" => "utf-8",
+        "subject" => "Qiniu+Invoice",
+        "total_amount" => "9.68",
+        "trade_status" => "TRADE_SUCCESS",
+        "version" => "1.0"
+      }
+      canonical_payload = params.sort.map { |key, value| "#{key}=#{value}" }.join("&")
+      params["sign"] = Base64.strict_encode64(
+        alipay_private_key.sign(OpenSSL::Digest::SHA256.new, canonical_payload)
+      )
+      params["sign_type"] = "RSA2"
+
+      expect(client.valid_notification?(params)).to be(true)
+    end
+  end
+
   describe "#refund" do
     let(:http_client) { instance_double(LagoHttpClient::Client) }
 
