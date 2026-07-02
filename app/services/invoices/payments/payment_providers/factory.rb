@@ -14,6 +14,8 @@ module Invoices
             Invoices::Payments::StripeService
           when "adyen"
             Invoices::Payments::AdyenService
+          when "alipay"
+            Invoices::Payments::AlipayService
           when "gocardless"
             Invoices::Payments::GocardlessService
           when "cashfree"

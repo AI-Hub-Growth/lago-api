@@ -36,6 +36,22 @@ class WebhooksController < ApplicationController
     head(:ok)
   end
 
+  def alipay
+    result = PaymentProviders::Alipay::HandleIncomingWebhookService.call(
+      organization_id: params[:organization_id],
+      code: params[:code].presence,
+      params: request.request_parameters
+    )
+
+    unless result.success?
+      return render(plain: "failure", status: :bad_request) if result.error.code == "webhook_error"
+
+      result.raise_if_error!
+    end
+
+    render plain: "success"
+  end
+
   def flutterwave
     result = PaymentProviders::Flutterwave::HandleIncomingWebhookService.call(
       organization_id: params[:organization_id],

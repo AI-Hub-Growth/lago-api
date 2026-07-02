@@ -23,6 +23,12 @@ FactoryBot.define do
     provider_customer_id { SecureRandom.uuid }
   end
 
+  factory :alipay_customer, class: "PaymentProviderCustomers::AlipayCustomer" do
+    customer
+    organization { customer.organization }
+    payment_provider { association(:alipay_provider, organization: organization) }
+  end
+
   factory :adyen_customer, class: "PaymentProviderCustomers::AdyenCustomer" do
     customer
     organization { customer.organization }

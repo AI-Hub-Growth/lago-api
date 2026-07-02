@@ -1298,6 +1298,35 @@ RSpec.describe Customers::UpsertFromApiService do
     end
   end
 
+  context "with alipay configuration" do
+    let(:create_args) do
+      {
+        external_id: SecureRandom.uuid,
+        name: "Foo Bar",
+        billing_configuration: {
+          payment_provider: "alipay",
+          payment_provider_code: "alipay_1"
+        }
+      }
+    end
+
+    context "when payment provider exists" do
+      let(:alipay_provider) { create(:alipay_provider, organization:, code: "alipay_1") }
+
+      before { alipay_provider }
+
+      it "creates an alipay provider customer and payment method without provider_customer_id" do
+        expect(result).to be_success
+        expect(result.customer.payment_provider).to eq("alipay")
+        expect(result.customer.payment_provider_code).to eq("alipay_1")
+        expect(result.customer.provider_customer).to eq(result.customer.alipay_customer)
+        expect(result.customer.provider_customer.provider_customer_id).to be_nil
+        expect(result.customer.default_payment_method.payment_provider).to eq(alipay_provider)
+        expect(result.customer.default_payment_method.provider_method_type).to eq("alipay")
+      end
+    end
+  end
+
   context "with gocardless configuration" do
     let(:create_args) do
       {

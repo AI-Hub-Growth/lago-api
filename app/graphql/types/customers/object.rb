@@ -150,6 +150,8 @@ module Types
           object.gocardless_customer
         when :cashfree
           object.cashfree_customer
+        when :alipay
+          object.alipay_customer
         when :adyen
           object.adyen_customer
         when :moneyhash

@@ -14,6 +14,8 @@ module PaymentProviderCustomers
         PaymentProviderCustomers::GocardlessService
       when "PaymentProviderCustomers::CashfreeCustomer"
         PaymentProviderCustomers::CashfreeService
+      when "PaymentProviderCustomers::AlipayCustomer"
+        PaymentProviderCustomers::AlipayService
       when "PaymentProviderCustomers::FlutterwaveCustomer"
         PaymentProviderCustomers::FlutterwaveService
       when "PaymentProviderCustomers::AdyenCustomer"

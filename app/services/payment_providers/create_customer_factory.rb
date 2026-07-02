@@ -10,6 +10,8 @@ module PaymentProviders
       case provider
       when "adyen"
         PaymentProviders::Adyen::Customers::CreateService
+      when "alipay"
+        PaymentProviders::Alipay::Customers::CreateService
       when "cashfree"
         PaymentProviders::Cashfree::Customers::CreateService
       when "flutterwave"

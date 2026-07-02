@@ -205,6 +205,68 @@ RSpec.describe PaymentRequests::Payments::CreateService do
       end
     end
 
+    context "with alipay payment provider" do
+      let(:provider) { "alipay" }
+      let(:payment_provider_code) { "alipay" }
+      let(:payment_provider) { create(:alipay_provider, code: payment_provider_code, organization:) }
+      let(:provider_customer) { create(:alipay_customer, payment_provider:, customer:) }
+      let(:provider_class) { PaymentProviders::Alipay::Payments::CreateService }
+      let(:default_payment_method) do
+        create(
+          :payment_method,
+          customer:,
+          organization:,
+          payment_provider:,
+          payment_provider_customer: provider_customer,
+          provider_method_id: "alipay",
+          provider_method_type: "alipay",
+          is_default: true,
+          details: {type: "alipay"}
+        )
+      end
+      let(:payment_request) do
+        create(
+          :payment_request,
+          organization:,
+          customer:,
+          amount_cents: 799,
+          amount_currency: "CNY",
+          invoices: [invoice_1, invoice_2]
+        )
+      end
+      let(:invoice_1) do
+        create(
+          :invoice,
+          organization:,
+          customer:,
+          total_amount_cents: 200,
+          currency: "CNY",
+          ready_for_payment_processing: true
+        )
+      end
+      let(:invoice_2) do
+        create(
+          :invoice,
+          organization:,
+          customer:,
+          total_amount_cents: 599,
+          currency: "CNY",
+          ready_for_payment_processing: true
+        )
+      end
+
+      it "creates a payment without requiring a provider customer id" do
+        result = create_service.call
+
+        expect(result).to be_success
+        expect(result.payment).to be_present
+        expect(result.payment.payment_provider).to eq(payment_provider)
+        expect(result.payment.payment_provider_customer).to eq(provider_customer)
+        expect(provider_class).to have_received(:new)
+        expect(provider_service).to have_received(:call!)
+      end
+    end
+
     context "with stripe payment provider" do
       it "creates a payment and calls the stripe service" do
         result = create_service.call

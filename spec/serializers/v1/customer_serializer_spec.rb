@@ -110,6 +110,19 @@ RSpec.describe ::V1::CustomerSerializer do
     end
   end
 
+  context "with an alipay customer" do
+    let(:alipay_customer) { create(:alipay_customer, customer:) }
+
+    before do
+      alipay_customer
+      customer.update!(payment_provider: "alipay")
+    end
+
+    it "serializes the object" do
+      expect(result["customer"]["billing_configuration"]["provider_customer_id"]).to eq(alipay_customer.provider_customer_id)
+    end
+  end
+
   context "with a VIES check" do
     subject(:serializer) { described_class.new(customer, root_name: "customer", includes: %i[vies_check], vies_check: {custom_hash: "yes"}) }
 

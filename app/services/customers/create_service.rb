@@ -100,10 +100,13 @@ module Customers
       end
 
       # NOTE: handle configuration for configured payment providers
-      billing_configuration = args[:provider_customer]&.to_h&.merge(
-        payment_provider: args[:payment_provider],
-        payment_provider_code: args[:payment_provider_code]
-      )
+      billing_configuration = args[:provider_customer]&.to_h
+      if billing_configuration.present? || args[:payment_provider].present?
+        billing_configuration = (billing_configuration || {}).merge(
+          payment_provider: args[:payment_provider],
+          payment_provider_code: args[:payment_provider_code]
+        )
+      end
       create_billing_configuration(customer, billing_configuration)
 
       result.customer = customer
@@ -154,6 +157,9 @@ module Customers
 
       create_provider_customer = billing_configuration[:sync_with_provider]
       create_provider_customer ||= billing_configuration[:provider_customer_id]
+      create_provider_customer ||= Customer.implicit_provider_customer_payment_provider?(
+        billing_configuration[:payment_provider]
+      )
       return unless create_provider_customer
 
       if api_context?

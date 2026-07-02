@@ -133,6 +133,39 @@ RSpec.describe Invoices::Payments::CreateService do
       end
     end
 
+    context "with alipay payment provider" do
+      let(:provider) { "alipay" }
+      let(:payment_provider_code) { "alipay" }
+      let(:provider_class) { PaymentProviders::Alipay::Payments::CreateService }
+      let(:payment_provider) { create(:alipay_provider, code: payment_provider_code, organization:) }
+      let(:provider_customer) { create(:alipay_customer, payment_provider:, customer:) }
+      let(:invoice) { create(:invoice, customer:, organization:, total_amount_cents: 100, currency: "CNY", invoice_type: :one_off) }
+      let(:default_payment_method) do
+        create(
+          :payment_method,
+          customer:,
+          organization:,
+          payment_provider:,
+          payment_provider_customer: provider_customer,
+          provider_method_id: "alipay",
+          provider_method_type: "alipay",
+          is_default: true,
+          details: {type: "alipay"}
+        )
+      end
+
+      it "creates a payment without requiring a provider customer id" do
+        result = create_service.call
+
+        expect(result).to be_success
+        expect(result.payment).to be_present
+        expect(result.payment.payment_provider).to eq(payment_provider)
+        expect(result.payment.payment_provider_customer).to eq(provider_customer)
+        expect(provider_class).to have_received(:new)
+        expect(provider_service).to have_received(:call!)
+      end
+    end
+
     context "with subscription invoice" do
       let(:organization) { create(:organization, feature_flags: %w[multiple_payment_methods]) }
       let(:subscription_payment_method) { create(:payment_method, customer:, is_default: false) }

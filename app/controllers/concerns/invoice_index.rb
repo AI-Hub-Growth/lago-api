@@ -71,6 +71,7 @@ module InvoiceIndex
             :stripe_customer,
             :gocardless_customer,
             :cashfree_customer,
+            :alipay_customer,
             :adyen_customer,
             :moneyhash_customer,
             {integration_customers: :integration}

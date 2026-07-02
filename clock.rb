@@ -200,6 +200,12 @@ module Clockwork
       .perform_later
   end
 
+  every(5.minutes, "schedule:sync_alipay_payments") do
+    Clock::SyncAlipayPaymentsJob
+      .set(sentry: {"slug" => "lago_sync_alipay_payments", "cron" => "*/5 * * * *"})
+      .perform_later
+  end
+
   # NOTE: Enable wallets and lifetime usage refresh from the events-processor
   if ENV["LAGO_REDIS_STORE_URL"].present? && ENV["LAGO_CLICKHOUSE_ENABLED"].present?
     every(10.seconds, "schedule:refresh_flagged_subscriptions") do

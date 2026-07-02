@@ -16,6 +16,7 @@ RSpec.describe Organization do
     it do
       expect(subject).to have_many(:stripe_payment_providers)
       expect(subject).to have_many(:gocardless_payment_providers)
+      expect(subject).to have_many(:alipay_payment_providers)
       expect(subject).to have_many(:adyen_payment_providers)
 
       expect(subject).to have_many(:api_keys)
@@ -63,6 +64,16 @@ RSpec.describe Organization do
 
   describe "Clickhouse associations", clickhouse: true do
     it { is_expected.to have_many(:activity_logs).class_name("Clickhouse::ActivityLog") }
+  end
+
+  describe "#payment_provider" do
+    let(:organization) { create(:organization) }
+
+    it "returns the alipay payment provider" do
+      alipay_provider = create(:alipay_provider, organization:)
+
+      expect(organization.payment_provider("alipay")).to eq(alipay_provider)
+    end
   end
 
   it "sets the default value to true" do

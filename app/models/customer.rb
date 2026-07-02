@@ -104,6 +104,7 @@ class Customer < ApplicationRecord
   has_one :stripe_customer, class_name: "PaymentProviderCustomers::StripeCustomer"
   has_one :gocardless_customer, class_name: "PaymentProviderCustomers::GocardlessCustomer"
   has_one :cashfree_customer, class_name: "PaymentProviderCustomers::CashfreeCustomer"
+  has_one :alipay_customer, class_name: "PaymentProviderCustomers::AlipayCustomer"
   has_one :adyen_customer, class_name: "PaymentProviderCustomers::AdyenCustomer"
   has_one :flutterwave_customer, class_name: "PaymentProviderCustomers::FlutterwaveCustomer"
   has_one :netsuite_customer, class_name: "IntegrationCustomers::NetsuiteCustomer"
@@ -119,7 +120,8 @@ class Customer < ApplicationRecord
 
   delegate :default_currency, to: :organization, prefix: true
 
-  PAYMENT_PROVIDERS = %w[stripe gocardless cashfree adyen flutterwave moneyhash].freeze
+  PAYMENT_PROVIDERS = %w[stripe gocardless cashfree alipay adyen flutterwave moneyhash].freeze
+  IMPLICIT_PROVIDER_CUSTOMER_PAYMENT_PROVIDERS = %w[alipay].freeze
 
   default_scope -> { kept }
   sequenced scope: ->(customer) { customer.organization.customers.with_discarded },
@@ -131,6 +133,10 @@ class Customer < ApplicationRecord
   scope :falling_back_to_default_dunning_campaign, -> {
     where(applied_dunning_campaign_id: nil, exclude_from_dunning_campaign: false)
   }
+
+  def self.implicit_provider_customer_payment_provider?(payment_provider)
+    IMPLICIT_PROVIDER_CUSTOMER_PAYMENT_PROVIDERS.include?(payment_provider.to_s)
+  end
 
   scope :without_tax_errors, -> {
     tax_error_code = ErrorDetail.error_codes[:tax_error]
@@ -274,6 +280,8 @@ class Customer < ApplicationRecord
       gocardless_customer
     when :cashfree
       cashfree_customer
+    when :alipay
+      alipay_customer
     when :flutterwave
       flutterwave_customer
     when :adyen

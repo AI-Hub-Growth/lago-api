@@ -14,6 +14,8 @@ module PaymentRequests
             PaymentRequests::Payments::StripeService
           when "adyen"
             PaymentRequests::Payments::AdyenService
+          when "alipay"
+            PaymentRequests::Payments::AlipayService
           when "cashfree"
             PaymentRequests::Payments::CashfreeService
           when "flutterwave"
