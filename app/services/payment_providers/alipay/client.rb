@@ -156,7 +156,14 @@ module PaymentProviders
       end
 
       def gateway_url
-        Rails.env.production? ? PRODUCTION_GATEWAY_URL : SANDBOX_GATEWAY_URL
+        case ENV["LAGO_ALIPAY_ENVIRONMENT"].to_s.downcase
+        when "sandbox"
+          SANDBOX_GATEWAY_URL
+        when "production"
+          PRODUCTION_GATEWAY_URL
+        else
+          Rails.env.production? ? PRODUCTION_GATEWAY_URL : SANDBOX_GATEWAY_URL
+        end
       end
 
       def http_client
