@@ -328,6 +328,70 @@ RSpec.describe WebhooksController do
     end
   end
 
+  describe "POST /alipay" do
+    let(:organization) { create(:organization) }
+    let(:code) { "alipay-cn" }
+    let(:body) do
+      {
+        "app_id" => "9021000158636207",
+        "charset" => "utf-8",
+        "notify_type" => "trade_status_sync",
+        "out_trade_no" => "inv_123",
+        "passback_params" => "%7B%22lago_payable_id%22%3A%22invoice-1%22%7D",
+        "sign" => "signature",
+        "sign_type" => "RSA2",
+        "total_amount" => "9.68",
+        "trade_status" => "TRADE_SUCCESS",
+        "version" => "1.0"
+      }
+    end
+    let(:result) { BaseService::Result.new }
+
+    before do
+      allow(PaymentProviders::Alipay::HandleIncomingWebhookService).to receive(:call)
+        .with(
+          organization_id: organization.id,
+          code:,
+          params: body
+        )
+        .and_return(result)
+    end
+
+    it "handles alipay webhooks with only the notification body params" do
+      post(
+        "/webhooks/alipay/#{organization.id}?code=#{code}",
+        params: body,
+        headers: {
+          "Content-Type" => "application/x-www-form-urlencoded"
+        }
+      )
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to eq("success")
+      expect(PaymentProviders::Alipay::HandleIncomingWebhookService).to have_received(:call)
+    end
+
+    context "when failing to handle alipay event" do
+      let(:result) do
+        BaseService::Result.new.service_failure!(code: "webhook_error", message: "Invalid payload")
+      end
+
+      it "returns failure with bad request status" do
+        post(
+          "/webhooks/alipay/#{organization.id}?code=#{code}",
+          params: body,
+          headers: {
+            "Content-Type" => "application/x-www-form-urlencoded"
+          }
+        )
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.body).to eq("failure")
+        expect(PaymentProviders::Alipay::HandleIncomingWebhookService).to have_received(:call)
+      end
+    end
+  end
+
   describe "POST /flutterwave" do
     let(:organization) { create(:organization) }
 

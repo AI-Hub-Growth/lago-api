@@ -40,7 +40,7 @@ class WebhooksController < ApplicationController
     result = PaymentProviders::Alipay::HandleIncomingWebhookService.call(
       organization_id: params[:organization_id],
       code: params[:code].presence,
-      params: request.request_parameters
+      params: alipay_notification_params
     )
 
     unless result.success?
@@ -50,6 +50,10 @@ class WebhooksController < ApplicationController
     end
 
     render plain: "success"
+  end
+
+  def alipay_notification_params
+    request.request_parameters.except("controller", "action", "organization_id", "code")
   end
 
   def flutterwave

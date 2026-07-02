@@ -96,7 +96,7 @@ RSpec.describe PaymentProviders::Alipay::Client do
       )
     end
 
-    it "verifies notifications using the parsed form values" do
+    it "verifies notifications after percent-decoding returned values" do
       params = {
         "app_id" => payment_provider.app_id,
         "charset" => "utf-8",
@@ -104,6 +104,26 @@ RSpec.describe PaymentProviders::Alipay::Client do
         "out_trade_no" => "inv_123",
         "passback_params" => "%7B%22lago_payable_id%22%3A%22invoice-1%22%7D",
         "subject" => "Qiniu - Invoice QIN-1",
+        "total_amount" => "9.68",
+        "trade_status" => "TRADE_SUCCESS",
+        "version" => "1.0"
+      }
+      canonical_payload = params.sort.map do |key, value|
+        "#{key}=#{CGI.unescape(value.to_s.gsub("+", "%2B"))}"
+      end.join("&")
+      params["sign"] = Base64.strict_encode64(
+        alipay_private_key.sign(OpenSSL::Digest::SHA256.new, canonical_payload)
+      )
+      params["sign_type"] = "RSA2"
+
+      expect(client.valid_notification?(params)).to be(true)
+    end
+
+    it "keeps literal plus signs when decoding notification values" do
+      params = {
+        "app_id" => payment_provider.app_id,
+        "charset" => "utf-8",
+        "subject" => "Qiniu+Invoice",
         "total_amount" => "9.68",
         "trade_status" => "TRADE_SUCCESS",
         "version" => "1.0"
