@@ -96,7 +96,7 @@ RSpec.describe PaymentProviders::Alipay::Client do
       )
     end
 
-    it "verifies notifications with url-encoded passback params" do
+    it "verifies notifications using the parsed form values" do
       params = {
         "app_id" => payment_provider.app_id,
         "charset" => "utf-8",
@@ -108,9 +108,7 @@ RSpec.describe PaymentProviders::Alipay::Client do
         "trade_status" => "TRADE_SUCCESS",
         "version" => "1.0"
       }
-      canonical_payload = params.sort.map do |key, value|
-        "#{key}=#{CGI.unescape(value.to_s.gsub("+", "%2B"))}"
-      end.join("&")
+      canonical_payload = params.sort.map { |key, value| "#{key}=#{value}" }.join("&")
       params["sign"] = Base64.strict_encode64(
         alipay_private_key.sign(OpenSSL::Digest::SHA256.new, canonical_payload)
       )
@@ -119,16 +117,17 @@ RSpec.describe PaymentProviders::Alipay::Client do
       expect(client.valid_notification?(params)).to be(true)
     end
 
-    it "keeps literal plus signs when decoding notification values" do
+    it "ignores sign type and blank values like AlipaySignature.rsaCheckV1" do
       params = {
         "app_id" => payment_provider.app_id,
         "charset" => "utf-8",
-        "subject" => "Qiniu+Invoice",
+        "empty_value" => "",
+        "subject" => "Qiniu - Invoice",
         "total_amount" => "9.68",
         "trade_status" => "TRADE_SUCCESS",
         "version" => "1.0"
       }
-      canonical_payload = params.sort.map { |key, value| "#{key}=#{value}" }.join("&")
+      canonical_payload = params.except("empty_value").sort.map { |key, value| "#{key}=#{value}" }.join("&")
       params["sign"] = Base64.strict_encode64(
         alipay_private_key.sign(OpenSSL::Digest::SHA256.new, canonical_payload)
       )

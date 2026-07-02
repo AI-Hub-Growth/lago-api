@@ -76,7 +76,7 @@ module PaymentProviders
         verifier.verify(
           OpenSSL::Digest::SHA256.new,
           Base64.decode64(signature),
-          notification_canonical_string(params.except("sign", "sign_type"))
+          notification_canonical_string(params)
         )
       rescue OpenSSL::PKey::RSAError, ArgumentError
         false
@@ -129,13 +129,12 @@ module PaymentProviders
       end
 
       def notification_canonical_string(params)
-        params.stringify_keys.sort.map do |key, value|
-          "#{key}=#{notification_value(value)}"
-        end.join("&")
-      end
-
-      def notification_value(value)
-        CGI.unescape(value.to_s.gsub("+", "%2B"))
+        params.stringify_keys
+          .except("sign", "sign_type")
+          .filter { |key, value| key.present? && value.present? }
+          .sort
+          .map { |key, value| "#{key}=#{value}" }
+          .join("&")
       end
 
       def signer

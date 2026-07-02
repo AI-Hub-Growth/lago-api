@@ -43,6 +43,11 @@ module PaymentProviders
       end
 
       def invalid_webhook!(message)
+        Rails.logger.warn(
+          "Alipay webhook rejected organization_id=#{organization_id} code=#{code} " \
+          "app_id=#{params["app_id"]} reason=#{message}"
+        )
+
         result.service_failure!(code: "webhook_error", message:)
       end
     end
