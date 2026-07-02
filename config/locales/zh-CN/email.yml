@@ -1,0 +1,85 @@
+---
+zh-CN:
+  email:
+    api_key:
+      created:
+        access_warning: 如果您未授权此更改，请立即重置您的密码并删除该 API 密钥，以保护您的账户安全。
+        change_notice: 如果此更改是由您团队中的成员发起，您现在即可开始使用此 API 密钥来自动化您的计费流程。
+        email_info: 您会收到此电子邮件，是因为在您的 Lago 执行个体中建立了一个新的 API 密钥，而您具有管理员权限。
+        greetings: 您好，
+        key_has_been_created: 已成功为您的组织 %{organization_name} 建立新的 API 密钥。
+        subject: 已建立新的 Lago API 密钥
+      destroyed:
+        access_warning: 如果您未授权此请求，请立即重置您的密码以确保账户安全。
+        change_notice: 如果此更改是由您团队中的成员发起，则无需采取任何进一步行动。
+        email_info: 您会收到此电子邮件，是因为在您的 Lago 执行个体中删除了一个 API 密钥，而您具有管理员权限。
+        greetings: 您好，
+        key_has_been_destroyed: 已为您的组织 %{organization_name} 删除一个 API 密钥。
+        subject: 已删除 Lago API 密钥
+      rotated:
+        access_warning: 如果您未授权此请求，请立即重置您的密码并轮换您的 API 密钥，以确保账户安全。
+        change_notice: 如果此更改是由您团队中的成员发起，则无需采取任何进一步行动。为确保计费顺畅运作，请尽快更新您的应用程式以使用新的权杖。
+        email_info: 您会收到此电子邮件，是因为在您的 Lago 执行个体中已轮换一个 API 密钥，而您具有管理员权限。
+        greetings: 您好，
+        key_has_been_rotated: 您的组织 %{organization_name} 的 API 密钥已完成轮换！
+        subject: 您的 Lago API 密钥已完成轮换
+    credit_note:
+      created:
+        credit_note_from: 来自 %{billing_entity_name} 的退款单
+        credit_note_number: 退款单号码
+        credited_notice: 已于 %{date} 入账至客户余额
+        download: 下载退款单以查看详细信息
+        invoice_number: 发票号码
+        issue_date: 开具日期
+        issued_notice: 开具于 %{date}
+        offset_invoice_notice: 发票 %{invoice_number} 已于 %{date} 抵销
+        refunded_notice: 已于 %{date} 退款
+        subject: '来自 %{billing_entity_name} 的退款单 #%{credit_note_number}'
+    data_export:
+      completed:
+        fallback_text: 如果链接已过期，请从您的控制台重新生成一个新的链接。
+        greetings: 您好
+        intro: 您的 %{resource_type} 导出文件已准备好！您可使用下方链接下载，链接有效期限为 7 天。
+        lago_team: Lago 团队
+        main_cta_label: 下载导出文件
+        subject: 您的 Lago %{resource_type} 导出文件已准备好！
+        thanks: 谢谢，
+    invoice:
+      finalized:
+        download: 下载发票以查看详细信息
+        due_date: 付款截止日期 %{date}
+        invoice_from: 来自 %{billing_entity_name} 的发票
+        invoice_number: 发票号码
+        issue_date: 开具日期
+        issued_on: 开具于 %{date}
+        subject: '来自 %{billing_entity_name} 的发票 #%{invoice_number}'
+    organization:
+      authentication_methods_updated:
+        changes: 用户 %{user_email} 对登录验证方式进行了以下更改。
+        disabled: 已停用 %{login_method}
+        email_info: 如果您未预期会有此更改，请查看您的验证设置。
+        enabled: 已启用 %{login_method}
+        reasoning: 您会收到此讯息，是因为您是该组织的管理员。
+        subject: 您的 Lago 工作区登录方式已更新
+    password_reset:
+      subject: 重置您的 Lago 密码
+    payment_receipt:
+      created:
+        payment_receipt_from: 来自 %{billing_entity_name} 的付款收据
+        subject: '您来自 %{billing_entity_name} 的付款收据 #%{payment_receipt_number}'
+    payment_request:
+      requested:
+        already_paid: 如果您已完成付款，请忽略此电子邮件。
+        hello: 您好 %{customer_name}，
+        pay_amount: 支付余额
+        payment_terms:
+          one: 依合约约定，我们的付款期限为 %{count} 天。
+          other: 依合约约定，我们的付款期限为 %{count} 天。
+          zero: 依合约约定，需于发票生成时立即付款。
+        remaining_amount: 尚需支付金额
+        reminder_overdue_balance: 这是来自 %{billing_entity_name} 财务团队的提醒，部分发票已逾期。
+        subject: 您在 %{billing_entity_name} 的逾期应付金额
+        thank_you: 谢谢您。
+        total_amount_due: 应付总金额为 %{amount}。
+    powered_by: 技术提供
+    questions: 有任何问题吗？请透过以下方式联络我们：

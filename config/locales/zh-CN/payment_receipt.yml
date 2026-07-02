@@ -1,0 +1,10 @@
+---
+zh-CN:
+  payment_receipt:
+    document_name: 收据
+    download_invoice: 下载发票
+    download_receipt: 下载收据
+    number: 收据号码
+    paid_on: 已于 %{date} 付款（尚需支付：%{total_due_amount}）
+    payment_date: 付款日期
+    payment_method: 付款方式

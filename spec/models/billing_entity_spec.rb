@@ -116,6 +116,9 @@ RSpec.describe BillingEntity do
       billing_entity.document_locale = "en"
       expect(billing_entity).to be_valid
 
+      billing_entity.document_locale = "zh-CN"
+      expect(billing_entity).to be_valid
+
       billing_entity.document_locale = "foo"
       expect(billing_entity).not_to be_valid
 
