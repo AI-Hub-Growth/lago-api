@@ -311,6 +311,33 @@ RSpec.describe Customers::CreateService do
     end
   end
 
+  context "with alipay payment provider" do
+    let(:alipay_provider) { create(:alipay_provider, organization:, code: "alipay_1") }
+
+    before { alipay_provider }
+
+    context "without provider customer id" do
+      let(:create_args) do
+        {
+          external_id: SecureRandom.uuid,
+          name: "Foo Bar",
+          organization_id: organization.id,
+          payment_provider: "alipay",
+          payment_provider_code: "alipay_1"
+        }
+      end
+
+      it "creates an alipay provider customer and payment method" do
+        expect(result).to be_success
+        expect(result.customer.payment_provider).to eq("alipay")
+        expect(result.customer.alipay_customer).to be_present
+        expect(result.customer.alipay_customer.payment_provider).to eq(alipay_provider)
+        expect(result.customer.default_payment_method.payment_provider).to eq(alipay_provider)
+        expect(result.customer.default_payment_method.provider_method_type).to eq("alipay")
+      end
+    end
+  end
+
   context "with account_type 'partner'" do
     before do
       create_args.merge!(account_type: "partner")

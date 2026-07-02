@@ -19,6 +19,8 @@ module PaymentProviders
       case payment.payment_provider.type
       when "PaymentProviders::StripeProvider"
         PaymentProviders::Stripe::Payments::CancelService.call!(payment:)
+      when "PaymentProviders::AlipayProvider"
+        PaymentProviders::Alipay::Payments::CancelService.call!(payment:)
       when "PaymentProviders::AdyenProvider"
         PaymentProviders::Adyen::Payments::CancelService.call!(payment:)
       when "PaymentProviders::GocardlessProvider"

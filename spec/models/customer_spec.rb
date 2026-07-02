@@ -623,6 +623,17 @@ RSpec.describe Customer do
         expect(customer.provider_customer).to eq(gocardless_customer)
       end
     end
+
+    context "when payment provider is alipay" do
+      let(:payment_provider) { "alipay" }
+      let(:alipay_customer) { create(:alipay_customer, customer:) }
+
+      before { alipay_customer }
+
+      it "returns the alipay provider customer object" do
+        expect(customer.provider_customer).to eq(alipay_customer)
+      end
+    end
   end
 
   describe "#applicable_timezone" do

@@ -259,6 +259,8 @@ module CreditNotes
         CreditNotes::Refunds::GocardlessCreateJob.perform_later(credit_note)
       when PaymentProviders::AdyenProvider
         CreditNotes::Refunds::AdyenCreateJob.perform_later(credit_note)
+      when PaymentProviders::AlipayProvider
+        CreditNotes::Refunds::AlipayCreateJob.perform_later(credit_note)
       end
     end
 

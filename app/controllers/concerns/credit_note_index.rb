@@ -27,7 +27,17 @@ module CreditNoteIndex
           :customer
         ]
       },
-      customer: [:billing_entity, :metadata, :stripe_customer, :gocardless_customer, :cashfree_customer, :adyen_customer, :moneyhash_customer, :integration_customers]
+      customer: [
+        :billing_entity,
+        :metadata,
+        :stripe_customer,
+        :gocardless_customer,
+        :cashfree_customer,
+        :alipay_customer,
+        :adyen_customer,
+        :moneyhash_customer,
+        :integration_customers
+      ]
     ]
 
     result = CreditNotesQuery.call(

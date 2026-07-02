@@ -81,6 +81,28 @@ FactoryBot.define do
     end
   end
 
+  factory :alipay_provider, class: "PaymentProviders::AlipayProvider" do
+    organization
+    type { "PaymentProviders::AlipayProvider" }
+    code { "alipay_account_#{SecureRandom.uuid}" }
+    name { "Alipay Account 1" }
+
+    secrets do
+      {app_id:, app_private_key:, alipay_public_key:}.to_json
+    end
+
+    settings do
+      {success_redirect_url:}
+    end
+
+    transient do
+      app_id { "2021000000000000" }
+      app_private_key { OpenSSL::PKey::RSA.generate(2048).to_pem }
+      alipay_public_key { OpenSSL::PKey::RSA.generate(2048).public_key.to_pem }
+      success_redirect_url { Faker::Internet.url }
+    end
+  end
+
   factory :moneyhash_provider, class: "PaymentProviders::MoneyhashProvider" do
     organization
     type { "PaymentProviders::MoneyhashProvider" }

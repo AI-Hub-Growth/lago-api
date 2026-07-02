@@ -216,6 +216,9 @@ module Customers
 
       create_provider_customer = billing_configuration[:sync_with_provider]
       create_provider_customer ||= billing_configuration[:provider_customer_id]
+      create_provider_customer ||= Customer.implicit_provider_customer_payment_provider?(
+        billing_configuration[:payment_provider]
+      )
       return unless create_provider_customer
 
       if api_context?
@@ -277,6 +280,7 @@ module Customers
 
       update_provider_customer = (billing || {})[:provider_customer_id].present?
       update_provider_customer ||= customer.provider_customer&.provider_customer_id.present?
+      update_provider_customer ||= Customer.implicit_provider_customer_payment_provider?(customer.payment_provider)
 
       return unless update_provider_customer
 
@@ -316,7 +320,11 @@ module Customers
     end
 
     def should_create_billing_configuration?(billing, customer)
-      (billing[:sync_with_provider] || billing[:provider_customer_id].present?) && customer.provider_customer&.provider_customer_id.nil?
+      create_provider_customer = billing[:sync_with_provider] ||
+        billing[:provider_customer_id].present? ||
+        Customer.implicit_provider_customer_payment_provider?(billing[:payment_provider])
+
+      create_provider_customer && customer.provider_customer&.provider_customer_id.nil?
     end
   end
 end

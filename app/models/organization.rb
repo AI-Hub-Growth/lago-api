@@ -94,6 +94,7 @@ class Organization < ApplicationRecord
   has_many :stripe_payment_providers, class_name: "PaymentProviders::StripeProvider"
   has_many :gocardless_payment_providers, class_name: "PaymentProviders::GocardlessProvider"
   has_many :cashfree_payment_providers, class_name: "PaymentProviders::CashfreeProvider"
+  has_many :alipay_payment_providers, class_name: "PaymentProviders::AlipayProvider"
   has_many :adyen_payment_providers, class_name: "PaymentProviders::AdyenProvider"
 
   has_many :hubspot_integrations, class_name: "Integrations::HubspotIntegration"
@@ -263,13 +264,15 @@ class Organization < ApplicationRecord
   def payment_provider(provider)
     case provider
     when "stripe"
-      stripe_payment_provider
+      stripe_payment_providers.first
     when "gocardless"
-      gocardless_payment_provider
+      gocardless_payment_providers.first
     when "cashfree"
-      cashfree_payment_provider
+      cashfree_payment_providers.first
+    when "alipay"
+      alipay_payment_providers.first
     when "adyen"
-      adyen_payment_provider
+      adyen_payment_providers.first
     end
   end
 

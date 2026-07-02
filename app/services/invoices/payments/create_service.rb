@@ -118,9 +118,9 @@ module Invoices
         return false if current_payment_provider.blank?
 
         if multiple_payment_methods_enabled?
-          current_payment_provider_customer&.provider_customer_id && determine_payment_method.present?
+          provider_customer_ready? && determine_payment_method.present?
         else
-          current_payment_provider_customer&.provider_customer_id
+          provider_customer_ready?
         end
       end
 
@@ -131,6 +131,13 @@ module Invoices
       def current_payment_provider_customer
         @current_payment_provider_customer ||= customer.payment_provider_customers
           .find_by(payment_provider_id: current_payment_provider.id)
+      end
+
+      def provider_customer_ready?
+        return false unless current_payment_provider_customer
+        return true unless current_payment_provider_customer.require_provider_payment_id?
+
+        current_payment_provider_customer.provider_customer_id.present?
       end
 
       def update_invoice_payment_status(payment_status:)

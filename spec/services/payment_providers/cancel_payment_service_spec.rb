@@ -11,6 +11,7 @@ RSpec.describe PaymentProviders::CancelPaymentService do
 
   before do
     allow(PaymentProviders::Stripe::Payments::CancelService).to receive(:call!)
+    allow(PaymentProviders::Alipay::Payments::CancelService).to receive(:call!)
     allow(PaymentProviders::Adyen::Payments::CancelService).to receive(:call!)
     allow(PaymentProviders::Gocardless::Payments::CancelService).to receive(:call!)
   end
@@ -30,6 +31,7 @@ RSpec.describe PaymentProviders::CancelPaymentService do
       result
 
       expect(PaymentProviders::Stripe::Payments::CancelService).not_to have_received(:call!)
+      expect(PaymentProviders::Alipay::Payments::CancelService).not_to have_received(:call!)
       expect(PaymentProviders::Adyen::Payments::CancelService).not_to have_received(:call!)
       expect(PaymentProviders::Gocardless::Payments::CancelService).not_to have_received(:call!)
     end
@@ -89,6 +91,30 @@ RSpec.describe PaymentProviders::CancelPaymentService do
     it "does not call the other PSP cancel services" do
       result
 
+      expect(PaymentProviders::Adyen::Payments::CancelService).not_to have_received(:call!)
+      expect(PaymentProviders::Alipay::Payments::CancelService).not_to have_received(:call!)
+      expect(PaymentProviders::Gocardless::Payments::CancelService).not_to have_received(:call!)
+    end
+  end
+
+  context "when the provider is Alipay" do
+    let(:payment_provider) { create(:alipay_provider, organization:) }
+    let(:provider_customer) { create(:alipay_customer, customer:, payment_provider:) }
+    let(:payment) do
+      create(:payment, payable: invoice, payment_provider:, payment_provider_customer: provider_customer,
+        organization:, customer:, provider_payment_id: "inv_123", payable_payment_status: :pending)
+    end
+
+    it "routes to the Alipay cancel service with the payment" do
+      result
+
+      expect(PaymentProviders::Alipay::Payments::CancelService).to have_received(:call!).with(payment:)
+    end
+
+    it "does not call the other PSP cancel services" do
+      result
+
+      expect(PaymentProviders::Stripe::Payments::CancelService).not_to have_received(:call!)
       expect(PaymentProviders::Adyen::Payments::CancelService).not_to have_received(:call!)
       expect(PaymentProviders::Gocardless::Payments::CancelService).not_to have_received(:call!)
     end

@@ -81,6 +81,9 @@ module V1
       when :cashfree
         configuration[:provider_customer_id] = model.cashfree_customer&.provider_customer_id
         configuration.merge!(model.cashfree_customer&.settings&.symbolize_keys || {})
+      when :alipay
+        configuration[:provider_customer_id] = model.alipay_customer&.provider_customer_id
+        configuration.merge!(model.alipay_customer&.settings&.symbolize_keys || {})
       when :adyen
         configuration[:provider_customer_id] = model.adyen_customer&.provider_customer_id
         configuration.merge!(model.adyen_customer&.settings&.symbolize_keys || {})

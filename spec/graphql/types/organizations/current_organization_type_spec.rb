@@ -43,6 +43,7 @@ RSpec.describe Types::Organizations::CurrentOrganizationType do
     expect(subject).to have_field(:taxes).of_type("[Tax!]").with_permission("organization:taxes:view")
 
     expect(subject).to have_field(:adyen_payment_providers).of_type("[AdyenProvider!]").with_permission("organization:integrations:view")
+    expect(subject).to have_field(:alipay_payment_providers).of_type("[AlipayProvider!]").with_permission("organization:integrations:view")
     expect(subject).to have_field(:cashfree_payment_providers).of_type("[CashfreeProvider!]").with_permission("organization:integrations:view")
     expect(subject).to have_field(:gocardless_payment_providers).of_type("[GocardlessProvider!]").with_permission("organization:integrations:view")
     expect(subject).to have_field(:stripe_payment_providers).of_type("[StripeProvider!]").with_permission("organization:integrations:view")

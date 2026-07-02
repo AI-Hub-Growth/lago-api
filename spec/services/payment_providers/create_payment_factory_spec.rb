@@ -21,6 +21,14 @@ RSpec.describe PaymentProviders::CreatePaymentFactory do
       end
     end
 
+    context "when provider is alipay" do
+      let(:provider) { "alipay" }
+
+      it "creates an instance of the alipay service" do
+        expect(new_instance).to be_instance_of(PaymentProviders::Alipay::Payments::CreateService)
+      end
+    end
+
     context "when provider is gocardless" do
       let(:provider) { "gocardless" }
 

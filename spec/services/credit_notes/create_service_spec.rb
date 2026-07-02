@@ -274,6 +274,25 @@ RSpec.describe CreditNotes::CreateService do
         end
       end
 
+      context "when Alipay provider" do
+        let(:alipay_provider) { create(:alipay_provider, organization:) }
+        let(:alipay_customer) { create(:alipay_customer, customer:, organization:, payment_provider: alipay_provider) }
+        let(:payment) do
+          create(
+            :payment,
+            payable: invoice,
+            payment_provider: alipay_provider,
+            payment_provider_customer: alipay_customer
+          )
+        end
+
+        it "enqueues a refund job after commit" do
+          expect { subject }.to have_enqueued_job_after_commit(CreditNotes::Refunds::AlipayCreateJob).with do |job_credit_note|
+            expect(job_credit_note).to eq(credit_note)
+          end
+        end
+      end
+
       context "when credit note does not have refund amount" do
         let(:credit_amount_cents) { 15 }
         let(:refund_amount_cents) { 0 }

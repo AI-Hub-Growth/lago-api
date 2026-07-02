@@ -307,6 +307,27 @@ describe Clockwork do
     end
   end
 
+  describe "schedule:sync_alipay_payments" do
+    let(:job) { "schedule:sync_alipay_payments" }
+    let(:start_time) { Time.zone.parse("1 Apr 2022 00:01:00") }
+    let(:end_time) { Time.zone.parse("1 Apr 2022 00:16:00") }
+
+    it "enqueues an Alipay payments sync job" do
+      Clockwork::Test.run(
+        file: clock_file,
+        start_time:,
+        end_time:,
+        tick_speed: 1.minute
+      )
+
+      expect(Clockwork::Test).to be_ran_job(job)
+      expect(Clockwork::Test.times_run(job)).to eq(3)
+
+      Clockwork::Test.block_for(job).call
+      expect(Clock::SyncAlipayPaymentsJob).to have_been_enqueued
+    end
+  end
+
   describe "schedule:refresh_flagged_subscriptions" do
     let(:job) { "schedule:refresh_flagged_subscriptions" }
     let(:start_time) { Time.zone.parse("2025-03-27T00:05:00") }
