@@ -18,6 +18,7 @@ RSpec.describe BillingEntities::UpdateService do
   let(:logo) { nil }
   let(:country) { "fr" }
   let(:einvoicing) { true }
+  let(:document_locale) { "fr" }
 
   let(:params) do
     {
@@ -40,7 +41,7 @@ RSpec.describe BillingEntities::UpdateService do
       email_settings:,
       billing_configuration: {
         invoice_footer: "invoice footer",
-        document_locale: "fr",
+        document_locale:,
         invoice_grace_period:,
         subscription_invoice_issuing_date_anchor:,
         subscription_invoice_issuing_date_adjustment:
@@ -70,6 +71,17 @@ RSpec.describe BillingEntities::UpdateService do
 
       expect(result.billing_entity.invoice_footer).to eq("invoice footer")
       expect(result.billing_entity.document_locale).to eq("fr")
+    end
+
+    context "when document locale is Chinese Simplified" do
+      let(:document_locale) { "zh-CN" }
+      let(:timezone) { "UTC" }
+
+      it "updates the billing_entity document locale" do
+        result = update_service.call
+
+        expect(result.billing_entity.document_locale).to eq("zh-CN")
+      end
     end
 
     context "with email containing unicode lookalike characters" do

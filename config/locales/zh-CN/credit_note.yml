@@ -1,0 +1,28 @@
+---
+zh-CN:
+  credit_note:
+    amount: 金额（不含税）
+    coupon_adjustment: 优惠券
+    credit_from: 来自
+    credit_note_number: 退款单号码
+    credit_to: 退款至
+    credited_notice: 已于 %{issuing_date} 入账至客户余额
+    credited_on_customer_balance: 已入账至客户余额
+    document_name: 退款单
+    invoice_number: 发票号码
+    issue_date: 开具日期
+    issued_notice: 开具于 %{issuing_date}
+    item: 项目
+    offset_invoice: 发票 %{invoice_number} 的抵销
+    offset_invoice_notice: 发票 %{invoice_number} 已于 %{issuing_date} 抵销
+    powered_by: 技术提供
+    prepaid_credits_for_wallet: 预付额度 - %{wallet_name}
+    refunded: 已退款
+    refunded_notice: 已于 %{issuing_date} 退款
+    self_billed:
+      footer: 本自开票对应的退款单由客户在合作方同意下，代表合作方开具。合作方已同意不再为此交易自行开具退款单。
+    sub_total_without_tax: 小计（不含税）
+    subscription: 订阅
+    tax: "%{name}（%{amount} 的 %{rate}%）"
+    tax_rate: 税率
+    total: 总计
