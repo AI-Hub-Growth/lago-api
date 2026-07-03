@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "cgi"
-
 module PaymentProviders
   module Alipay
     class Client
@@ -135,12 +133,8 @@ module PaymentProviders
           .except("sign", "sign_type")
           .filter { |key, value| key.present? && value.present? }
           .sort
-          .map { |key, value| "#{key}=#{notification_value(value)}" }
+          .map { |key, value| "#{key}=#{value}" }
           .join("&")
-      end
-
-      def notification_value(value)
-        CGI.unescape(value.to_s.gsub("+", "%2B"))
       end
 
       def signer
