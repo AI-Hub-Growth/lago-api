@@ -25,10 +25,11 @@ module PaymentProviders
         return invalid_webhook!("Unexpected app_id") if params["app_id"] != payment_provider.app_id
         return invalid_webhook!("Invalid signature") unless client(payment_provider).valid_notification?(params)
 
-        PaymentProviders::Alipay::HandleEventJob.perform_later(
+        event_result = PaymentProviders::Alipay::HandleEventService.call(
           organization: payment_provider.organization,
           event: params
         )
+        return invalid_webhook!("Failed to process event: #{event_result.error.error_message}") unless event_result.success?
 
         result.event = params
         result
