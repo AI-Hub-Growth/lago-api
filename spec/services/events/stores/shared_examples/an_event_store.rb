@@ -105,6 +105,12 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
     events
   end
 
+  def grouped_prorated_to_h(results)
+    results.map do |r|
+      {groups: r.groups, prorated_value: r.prorated_value.to_f, value: r.value.to_f, events_count: r.events_count}
+    end
+  end
+
   def create_european_event(country:, city:, value:, timestamp:, charge_filter: nil)
     create_event(
       timestamp:,
@@ -268,7 +274,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
   if include_feature?(:count)
     describe "#count" do
       it "returns the number of unique events" do
-        expect(event_store.count).to eq(5)
+        expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 5, events_count: 5))
       end
 
       context "with grouped_by_values" do
@@ -276,14 +282,14 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         let(:events_grouped_by) { ["region"] }
 
         it "returns the number of unique events" do
-          expect(event_store.count).to eq(3)
+          expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 3, events_count: 3))
         end
 
         context "when grouped_by_values value is nil" do
           let(:grouped_by_values) { {"region" => nil} }
 
           it "returns the number of unique events" do
-            expect(event_store.count).to eq(2)
+            expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 2, events_count: 2))
           end
         end
       end
@@ -314,7 +320,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           # - europe, france, paris
           # - europe, france, cambridge
           # - europe, united kingdom, manchester
-          expect(event_store.count).to eq(4)
+          expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 4, events_count: 4))
         end
 
         # We faced an issue where Arel caused a Stack Level Too Deep error due to how the request `OR` conditons are build.
@@ -362,7 +368,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           end
 
           it "returns the number of unique events ignoring empty entries" do
-            expect(event_store.count).to eq(4)
+            expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 4, events_count: 4))
           end
         end
       end
@@ -378,7 +384,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         end
 
         it "returns the number of unique events" do
-          expect(event_store.count).to eq(2)
+          expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 2, events_count: 2))
         end
       end
 
@@ -396,7 +402,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           end
 
           it "takes the event into account" do
-            expect(event_store.count).to eq(6)
+            expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 6, events_count: 6))
           end
         end
       end
@@ -410,45 +416,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
       it "applies the grouped_by_values in the block" do
         event_store.with_grouped_by_values(with_grouped_by_values) do
-          expect(event_store.count).to eq(3)
-        end
-      end
-    end
-  end
-
-  if include_feature?(:distinct_codes)
-    describe "#distinct_codes" do
-      before do
-        create_event(
-          timestamp: subscription_started_at + (1..10).to_a.sample.days,
-          value: "value",
-          transaction_id: SecureRandom.uuid,
-          code: "other_code"
-        )
-      end
-
-      it "returns the distinct event codes" do
-        expect(event_store.distinct_codes).to match_array([code, "other_code"])
-      end
-
-      context "when codes are provided" do
-        it "returns only the distinct event codes matching the provided codes" do
-          expect(event_store.distinct_codes(codes: [code, "unknown_code"])).to eq([code])
-        end
-
-        context "when an event with a provided code exists outside the period" do
-          before do
-            create_event(
-              timestamp: boundaries[:to_datetime] + 1.day,
-              value: "value",
-              transaction_id: SecureRandom.uuid,
-              code: "out_of_period_code"
-            )
-          end
-
-          it "does not return the code" do
-            expect(event_store.distinct_codes(codes: [code, "out_of_period_code"])).to eq([code])
-          end
+          expect(event_store.count).to eq(Events::Stores::BaseStore::AggregationResult.new(value: 3, events_count: 3))
         end
       end
     end
@@ -461,7 +429,10 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
       it "returns the number of unique events grouped by the provided group" do
         result = event_store.grouped_count
 
-        expect(result).to match_array([{groups: {"region" => nil}, value: 2}, {groups: {"region" => "europe"}, value: 3}])
+        expect(result).to match_array([
+          Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"region" => nil}, value: 2, events_count: 2),
+          Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"region" => "europe"}, value: 3, events_count: 3)
+        ])
       end
 
       context "with multiple groups" do
@@ -471,9 +442,9 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           result = event_store.grouped_count
 
           expect(result).to match_array([
-            {groups: {"country" => "france", "region" => "europe"}, value: 2},
-            {groups: {"country" => nil, "region" => nil}, value: 2},
-            {groups: {"country" => "united kingdom", "region" => "europe"}, value: 1}
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"country" => "france", "region" => "europe"}, value: 2, events_count: 2),
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"country" => nil, "region" => nil}, value: 2, events_count: 2),
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"country" => "united kingdom", "region" => "europe"}, value: 1, events_count: 1)
           ])
         end
       end
@@ -1701,8 +1672,8 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           result = event_store.grouped_count(["cloud"])
 
           expect(result).to match_array([
-            {groups: {"cloud" => "aws"}, value: 3},
-            {groups: {"cloud" => "gcp"}, value: 1}
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"cloud" => "aws"}, value: 3, events_count: 3),
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"cloud" => "gcp"}, value: 1, events_count: 1)
           ])
         end
       end
@@ -1720,9 +1691,9 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           result = event_store.grouped_count(["agent_name", "cloud"])
 
           expect(result).to match_array([
-            {groups: {"agent_name" => "frodo", "cloud" => "aws"}, value: 2},
-            {groups: {"agent_name" => "frodo", "cloud" => "gcp"}, value: 1},
-            {groups: {"agent_name" => "aragorn", "cloud" => "aws"}, value: 1}
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"agent_name" => "frodo", "cloud" => "aws"}, value: 2, events_count: 2),
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"agent_name" => "frodo", "cloud" => "gcp"}, value: 1, events_count: 1),
+            Events::Stores::BaseStore::GroupedAggregationResult.new(groups: {"agent_name" => "aragorn", "cloud" => "aws"}, value: 1, events_count: 1)
           ])
         end
       end
@@ -1975,8 +1946,8 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
           result = event_store.grouped_weighted_sum(["cloud"])
 
           expect(result.size).to eq(2)
-          expect(result.map { |r| r[:groups] }).to match_array([{"cloud" => "aws"}, {"cloud" => "gcp"}])
-          result.each { |r| expect(r[:value].round(5)).to eq(0.02218) }
+          expect(result.map { |r| r.groups }).to match_array([{"cloud" => "aws"}, {"cloud" => "gcp"}])
+          result.each { |r| expect(r.value.round(5)).to eq(0.02218) }
         end
       end
 
@@ -2004,11 +1975,11 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         it "returns the weighted sum breakdown per group" do
           result = event_store.grouped_weighted_sum(["agent_name", "cloud"])
 
-          expect(result.map { |r| r[:groups] }).to match_array([
+          expect(result.map { |r| r.groups }).to match_array([
             {"agent_name" => "frodo", "cloud" => "aws"},
             {"agent_name" => "aragorn", "cloud" => "gcp"}
           ])
-          result.each { |r| expect(r[:value].round(5)).to eq(0.02218) }
+          result.each { |r| expect(r.value.round(5)).to eq(0.02218) }
         end
       end
 
@@ -2049,8 +2020,8 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         it "uses the initial values in the aggregation" do
           result = event_store.grouped_weighted_sum(["cloud"], initial_values:)
 
-          expect(result.map { |r| r[:groups] }).to match_array([{"cloud" => "aws"}, {"cloud" => "gcp"}])
-          result.each { |r| expect(r[:value].round(5)).to eq(1000.02218) }
+          expect(result.map { |r| r.groups }).to match_array([{"cloud" => "aws"}, {"cloud" => "gcp"}])
+          result.each { |r| expect(r.value.round(5)).to eq(1000.02218) }
         end
       end
     end
@@ -2123,19 +2094,27 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
   if include_feature?(:prorated_sum)
     describe "#prorated_sum" do
-      it "returns the prorated sum of event properties" do
+      it "returns the prorated sum alongside the non-prorated value and events count" do
         event_store.aggregation_property = billable_metric.field_name
         event_store.numeric_property = true
 
-        expect(event_store.prorated_sum(period_duration: 31).round(5)).to eq(6.45161)
+        result = event_store.prorated_sum(period_duration: 31)
+
+        expect(result.prorated_value.round(5)).to eq(6.45161)
+        expect(result.value.to_f).to eq(15)
+        expect(result.events_count).to eq(5)
       end
 
       context "with persisted_duration" do
-        it "returns the prorated sum of event properties" do
+        it "returns the prorated sum alongside the non-prorated value and events count" do
           event_store.aggregation_property = billable_metric.field_name
           event_store.numeric_property = true
 
-          expect(event_store.prorated_sum(period_duration: 31, persisted_duration: 10).round(5)).to eq(4.83871)
+          result = event_store.prorated_sum(period_duration: 31, persisted_duration: 10)
+
+          expect(result.prorated_value.round(5)).to eq(4.83871)
+          expect(result.value.to_f).to eq(15)
+          expect(result.events_count).to eq(5)
         end
       end
     end
@@ -2145,28 +2124,28 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
     describe "#grouped_prorated_sum" do
       let(:grouped_by) { %w[region] }
 
-      it "returns the prorated sum of event properties" do
+      it "returns the prorated sum alongside the non-prorated value and events count" do
         event_store.aggregation_property = billable_metric.field_name
         event_store.numeric_property = true
 
         result = event_store.grouped_prorated_sum(period_duration: 31)
 
-        expect(result).to match_array([
-          {groups: {"region" => nil}, value: within(0.00001).of(2.64516)},
-          {groups: {"region" => "europe"}, value: within(0.00001).of(3.80645)}
+        expect(grouped_prorated_to_h(result)).to match_array([
+          {groups: {"region" => nil}, prorated_value: within(0.00001).of(2.64516), value: 6, events_count: 2},
+          {groups: {"region" => "europe"}, prorated_value: within(0.00001).of(3.80645), value: 9, events_count: 3}
         ])
       end
 
       context "with persisted_duration" do
-        it "returns the prorated sum of event properties" do
+        it "returns the prorated sum alongside the non-prorated value and events count" do
           event_store.aggregation_property = billable_metric.field_name
           event_store.numeric_property = true
 
           result = event_store.grouped_prorated_sum(period_duration: 31, persisted_duration: 10)
 
-          expect(result).to match_array([
-            {groups: {"region" => nil}, value: within(0.00001).of(1.93548)},
-            {groups: {"region" => "europe"}, value: within(0.00001).of(2.90322)}
+          expect(grouped_prorated_to_h(result)).to match_array([
+            {groups: {"region" => nil}, prorated_value: within(0.00001).of(1.93548), value: 6, events_count: 2},
+            {groups: {"region" => "europe"}, prorated_value: within(0.00001).of(2.90322), value: 9, events_count: 3}
           ])
         end
       end
@@ -2180,19 +2159,19 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
           result = event_store.grouped_prorated_sum(period_duration: 31)
 
-          expect(result).to match_array(
+          expect(grouped_prorated_to_h(result)).to match_array(
             [
               {
                 groups: {"country" => "united kingdom", "region" => "europe"},
-                value: within(0.00001).of(1.93548)
+                prorated_value: within(0.00001).of(1.93548), value: 5, events_count: 1
               },
               {
                 groups: {"country" => nil, "region" => nil},
-                value: within(0.00001).of(2.64516)
+                prorated_value: within(0.00001).of(2.64516), value: 6, events_count: 2
               },
               {
                 groups: {"country" => "france", "region" => "europe"},
-                value: within(0.00001).of(1.87096)
+                prorated_value: within(0.00001).of(1.87096), value: 4, events_count: 2
               }
             ]
           )
@@ -2226,7 +2205,8 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
             value: values[:value],
             timestamp: values[:timestamp],
             properties:,
-            charge_filter: values[:charge_filter]
+            charge_filter: values[:charge_filter],
+            created_at: values[:created_at]
           )
         end
       end
@@ -2237,7 +2217,11 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
       end
 
       it "returns the weighted sum of event properties" do
-        expect(event_store.weighted_sum.round(5)).to eq(0.02218)
+        result = event_store.weighted_sum
+
+        expect(result.value.round(5)).to eq(0.02218)
+        expect(result.variation).to eq(0)
+        expect(result.events_count).to eq(7)
       end
 
       context "with a single event" do
@@ -2248,7 +2232,11 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         end
 
         it "returns the weighted sum of event properties" do
-          expect(event_store.weighted_sum.round(5)).to eq(870.96774) # 4 / 31 * 0 + 27 / 31 * 1000
+          result = event_store.weighted_sum
+
+          expect(result.value.round(5)).to eq(870.96774) # 4 / 31 * 0 + 27 / 31 * 1000
+          expect(result.variation).to eq(1000)
+          expect(result.events_count).to eq(1)
         end
       end
 
@@ -2256,20 +2244,26 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         let(:events_values) { [] }
 
         it "returns the weighted sum of event properties" do
-          expect(event_store.weighted_sum.round(5)).to eq(0.0)
+          result = event_store.weighted_sum
+
+          expect(result.value.round(5)).to eq(0.0)
+          expect(result.variation).to eq(0)
+          expect(result.events_count).to eq(0)
         end
       end
 
       context "with events with the same timestamp" do
+        # NOTE: created_at is also identical to cover batch-ingested events that share
+        #       timestamp, value and created_at. They must be summed, not deduplicated.
         let(:events_values) do
           [
-            {timestamp: Time.zone.parse("2023-03-05 00:00:00.000"), value: 3},
-            {timestamp: Time.zone.parse("2023-03-05 00:00:00.000"), value: 3}
+            {timestamp: Time.zone.parse("2023-03-05 00:00:00.000"), value: 3, created_at: Time.zone.parse("2023-03-05 12:00:00.000")},
+            {timestamp: Time.zone.parse("2023-03-05 00:00:00.000"), value: 3, created_at: Time.zone.parse("2023-03-05 12:00:00.000")}
           ]
         end
 
         it "returns the weighted sum of event properties" do
-          expect(event_store.weighted_sum.round(5)).to eq(5.22581) # 4 / 31 * 0 + 27 / 31 * 6
+          expect(event_store.weighted_sum.value.round(5)).to eq(5.22581) # 4 / 31 * 0 + 27 / 31 * 6
         end
       end
 
@@ -2277,14 +2271,22 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         let(:initial_value) { 1000 }
 
         it "uses the initial value in the aggregation" do
-          expect(event_store.weighted_sum(initial_value:).round(5)).to eq(1000.02218)
+          result = event_store.weighted_sum(initial_value:)
+
+          expect(result.value.round(5)).to eq(1000.02218)
+          expect(result.variation).to eq(0)
+          expect(result.events_count).to eq(7)
         end
 
         context "without events" do
           let(:events_values) { [] }
 
           it "uses only the initial value in the aggregation" do
-            expect(event_store.weighted_sum(initial_value:).round(5)).to eq(1000.0)
+            result = event_store.weighted_sum(initial_value:)
+
+            expect(result.value.round(5)).to eq(1000.0)
+            expect(result.variation).to eq(0)
+            expect(result.events_count).to eq(0)
           end
         end
       end
@@ -2302,7 +2304,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
         end
 
         it "returns the weighted sum of event properties scoped to the group" do
-          expect(event_store.weighted_sum.round(5)).to eq(870.96774) # 4 / 31 * 0 + 27 / 31 * 1000
+          expect(event_store.weighted_sum.value.round(5)).to eq(870.96774) # 4 / 31 * 0 + 27 / 31 * 1000
         end
       end
 
@@ -2323,7 +2325,7 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
         it "includes the event in the weighted sum" do
           result = event_store.weighted_sum
-          expect(result.round(5)).to eq(5.0)
+          expect(result.value.round(5)).to eq(5.0)
         end
       end
     end
@@ -2354,7 +2356,8 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
             value: values[:value],
             timestamp: values[:timestamp],
             properties:,
-            charge_filter: values[:charge_filter]
+            charge_filter: values[:charge_filter],
+            created_at: values[:created_at]
           )
         end
       end
@@ -2539,15 +2542,19 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
         expect(result.count).to eq(3)
 
-        null_group = result.find { |v| v[:groups]["agent_name"].nil? }
-        expect(null_group[:groups]["agent_name"]).to be_nil
-        expect(null_group[:groups]["other"]).to be_nil
-        expect(null_group[:value].round(5)).to eq(0.02218)
+        null_group = result.find { |v| v.groups["agent_name"].nil? }
+        expect(null_group.groups["agent_name"]).to be_nil
+        expect(null_group.groups["other"]).to be_nil
+        expect(null_group.value.round(5)).to eq(0.02218)
+        expect(null_group.variation).to eq(0)
+        expect(null_group.events_count).to eq(7)
 
         (result - [null_group]).each do |row|
-          expect(row[:groups]["agent_name"]).not_to be_nil
-          expect(row[:groups]["other"]).to be_nil
-          expect(row[:value].round(5)).to eq(0.02218)
+          expect(row.groups["agent_name"]).not_to be_nil
+          expect(row.groups["other"]).to be_nil
+          expect(row.value.round(5)).to eq(0.02218)
+          expect(row.variation).to eq(0)
+          expect(row.events_count).to eq(7)
         end
       end
 
@@ -2575,15 +2582,19 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
           expect(result.count).to eq(3)
 
-          null_group = result.find { |v| v[:groups]["agent_name"].nil? }
-          expect(null_group[:groups]["agent_name"]).to be_nil
-          expect(null_group[:groups]["other"]).to be_nil
-          expect(null_group[:value].round(5)).to eq(1000.02218)
+          null_group = result.find { |v| v.groups["agent_name"].nil? }
+          expect(null_group.groups["agent_name"]).to be_nil
+          expect(null_group.groups["other"]).to be_nil
+          expect(null_group.value.round(5)).to eq(1000.02218)
+          expect(null_group.variation).to eq(0)
+          expect(null_group.events_count).to eq(7)
 
           (result - [null_group]).each do |row|
-            expect(row[:groups]["agent_name"]).not_to be_nil
-            expect(row[:groups]["other"]).to be_nil
-            expect(row[:value].round(5)).to eq(1000.02218)
+            expect(row.groups["agent_name"]).not_to be_nil
+            expect(row.groups["other"]).to be_nil
+            expect(row.value.round(5)).to eq(1000.02218)
+            expect(row.variation).to eq(0)
+            expect(row.events_count).to eq(7)
           end
         end
 
@@ -2595,15 +2606,19 @@ RSpec.shared_examples "an event store" do |with_event_duplication: true, excludi
 
             expect(result.count).to eq(3)
 
-            null_group = result.find { |v| v[:groups]["agent_name"].nil? }
-            expect(null_group[:groups]["agent_name"]).to be_nil
-            expect(null_group[:groups]["other"]).to be_nil
-            expect(null_group[:value].round(5)).to eq(1000)
+            null_group = result.find { |v| v.groups["agent_name"].nil? }
+            expect(null_group.groups["agent_name"]).to be_nil
+            expect(null_group.groups["other"]).to be_nil
+            expect(null_group.value.round(5)).to eq(1000)
+            expect(null_group.variation).to eq(0)
+            expect(null_group.events_count).to eq(0)
 
             (result - [null_group]).each do |row|
-              expect(row[:groups]["agent_name"]).not_to be_nil
-              expect(row[:groups]["other"]).to be_nil
-              expect(row[:value].round(5)).to eq(1000)
+              expect(row.groups["agent_name"]).not_to be_nil
+              expect(row.groups["other"]).to be_nil
+              expect(row.value.round(5)).to eq(1000)
+              expect(row.variation).to eq(0)
+              expect(row.events_count).to eq(0)
             end
           end
         end

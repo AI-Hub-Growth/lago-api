@@ -340,7 +340,6 @@ RSpec.describe PaymentRequests::Payments::CreateService do
       end
 
       context "when manual payment method is passed in params" do
-        let(:organization) { create(:organization, feature_flags: %w[multiple_payment_methods]) }
         let(:payment_method_params) { {payment_method_type: "manual"} }
 
         it "does not attach payment method to payment" do
@@ -352,7 +351,6 @@ RSpec.describe PaymentRequests::Payments::CreateService do
       end
 
       context "when valid payment method is passed in params" do
-        let(:organization) { create(:organization, feature_flags: %w[multiple_payment_methods]) }
         let(:payment_method) { create(:payment_method, customer:, is_default: false) }
         let(:payment_method_params) { {payment_method_id: payment_method.id} }
 
@@ -365,8 +363,6 @@ RSpec.describe PaymentRequests::Payments::CreateService do
       end
 
       context "when payment method is NOT passed in params" do
-        let(:organization) { create(:organization, feature_flags: %w[multiple_payment_methods]) }
-
         it "creates payment with customer default payment method" do
           result = create_service.call
 
