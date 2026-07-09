@@ -164,6 +164,9 @@ Rails.application.routes.draw do
 
       resources :orders, only: %i[show index]
       resources :payments, only: %i[create index show]
+      namespace :payment_providers do
+        put "alipay/:code", to: "alipay#update", as: :alipay, code: /.*/
+      end
       resources :plans, param: :code, code: /.*/ do
         resources :charges, only: %i[index show create update destroy], param: :code, code: /.*/, controller: "plans/charges" do
           resources :filters, only: %i[index show create update destroy], controller: "plans/charges/filters"
