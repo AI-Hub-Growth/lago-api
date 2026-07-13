@@ -6,6 +6,7 @@ ARG GO_VERSION=1.25.8
 FROM lincanvas-registry.cn-hangzhou.cr.aliyuncs.com/lincanvas/golang:${GO_VERSION} AS pdfcpu-build
 
 ARG PDFCPU_VERSION
+ENV GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
 
 RUN go install github.com/pdfcpu/pdfcpu/cmd/pdfcpu@v${PDFCPU_VERSION}
 
@@ -15,16 +16,31 @@ ARG BUNDLE_WITH
 
 WORKDIR /app
 
-RUN apt update && apt upgrade -y
-RUN apt install nodejs curl build-essential git pkg-config libpq-dev libclang-dev postgresql-client curl libyaml-dev -y && \
-  curl https://sh.rustup.rs -sSf | bash -s -- -y
+RUN sed -i 's|http://deb.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources && \
+  apt-get update && \
+  apt-get upgrade -y && \
+  apt-get install -y nodejs curl build-essential git pkg-config libpq-dev libclang-dev postgresql-client libyaml-dev && \
+  rm -rf /var/lib/apt/lists/*
+
+ENV RUSTUP_UPDATE_ROOT=https://mirrors.aliyun.com/rustup/rustup
+ENV RUSTUP_DIST_SERVER=https://mirrors.aliyun.com/rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://mirrors.aliyun.com/repo/rust/rustup-init.sh | sh -s -- -y && \
+  printf '%s\n' \
+    '[source.crates-io]' \
+    "replace-with = 'aliyun'" \
+    '[source.aliyun]' \
+    'registry = "sparse+https://mirrors.aliyun.com/crates.io-index/"' \
+    > /root/.cargo/config.toml
 
 COPY ./Gemfile /app/Gemfile
 COPY ./Gemfile.lock /app/Gemfile.lock
 
 ENV BUNDLER_VERSION='4.0.4'
 ENV PATH="$PATH:/root/.cargo/bin/"
-RUN gem install bundler --no-document -v '4.0.4'
+RUN gem sources --remove https://rubygems.org/ && \
+  gem sources --add https://mirrors.aliyun.com/rubygems/ && \
+  gem install bundler --no-document -v '4.0.4' && \
+  bundle config set --global mirror.https://rubygems.org https://mirrors.aliyun.com/rubygems/
 
 ENV BUNDLE_WITH=${BUNDLE_WITH:-}
 ENV BUNDLE_WITHOUT="development test"
@@ -36,8 +52,11 @@ FROM lincanvas-registry.cn-hangzhou.cr.aliyuncs.com/lincanvas/ruby:4.0.2-slim
 
 ARG BUNDLE_WITH
 
-RUN apt update && apt upgrade -y
-RUN apt install git libpq-dev curl postgresql-client libjemalloc2 -y
+RUN sed -i 's|http://deb.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources && \
+  apt-get update && \
+  apt-get upgrade -y && \
+  apt-get install -y git libpq-dev curl postgresql-client libjemalloc2 && \
+  rm -rf /var/lib/apt/lists/*
 
 ENV LD_PRELOAD=libjemalloc.so.2
 
