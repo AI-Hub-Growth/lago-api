@@ -1,13 +1,13 @@
 ARG PDFCPU_VERSION=0.11.1
 ARG GO_VERSION=1.25.8
 
-FROM golang:${GO_VERSION} AS pdfcpu-build
+FROM lincanvas-registry.cn-hangzhou.cr.aliyuncs.com/lincanvas/golang:${GO_VERSION} AS pdfcpu-build
 
 ARG PDFCPU_VERSION
 
 RUN go install github.com/pdfcpu/pdfcpu/cmd/pdfcpu@v${PDFCPU_VERSION}
 
-FROM ruby:4.0.2-slim AS build
+FROM lincanvas-registry.cn-hangzhou.cr.aliyuncs.com/lincanvas/ruby:4.0.2-slim AS build
 
 ARG BUNDLE_WITH
 
@@ -30,7 +30,7 @@ RUN --mount=type=secret,id=BUNDLE_GEMS__CONTRIBSYS__COM,env=BUNDLE_GEMS__CONTRIB
   bundle config set build.nokogiri --use-system-libraries &&\
   bundle install --jobs=3 --retry=3
 
-FROM ruby:4.0.2-slim
+FROM lincanvas-registry.cn-hangzhou.cr.aliyuncs.com/lincanvas/ruby:4.0.2-slim
 
 ARG BUNDLE_WITH
 
