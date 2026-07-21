@@ -6,6 +6,7 @@ module Types
       graphql_name "AlipayProvider"
 
       field :code, String, null: false
+      field :environment, Types::PaymentProviders::AlipayEnvironmentEnum, null: false
       field :id, ID, null: false
       field :name, String, null: false
 

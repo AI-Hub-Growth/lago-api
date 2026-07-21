@@ -9,6 +9,7 @@ module Types
       argument :app_id, String, required: true
       argument :app_private_key, String, required: true
       argument :code, String, required: true
+      argument :environment, Types::PaymentProviders::AlipayEnvironmentEnum, required: false
       argument :name, String, required: true
       argument :success_redirect_url, String, required: false
     end

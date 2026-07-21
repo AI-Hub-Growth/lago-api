@@ -7,19 +7,6 @@ RSpec.describe PaymentProviders::Alipay::Client do
 
   let(:payment_provider) { create(:alipay_provider) }
 
-  around do |example|
-    previous_environment = ENV.fetch("LAGO_ALIPAY_ENVIRONMENT", nil)
-    ENV.delete("LAGO_ALIPAY_ENVIRONMENT")
-
-    example.run
-  ensure
-    if previous_environment.nil?
-      ENV.delete("LAGO_ALIPAY_ENVIRONMENT")
-    else
-      ENV["LAGO_ALIPAY_ENVIRONMENT"] = previous_environment
-    end
-  end
-
   describe "#page_pay_session" do
     it "returns gateway form fields for POST submission" do
       canonical_payload = nil
@@ -50,8 +37,8 @@ RSpec.describe PaymentProviders::Alipay::Client do
       expect(session[:fields][:sign]).to be_present
     end
 
-    it "uses the sandbox gateway when LAGO_ALIPAY_ENVIRONMENT is sandbox" do
-      ENV["LAGO_ALIPAY_ENVIRONMENT"] = "sandbox"
+    it "uses the sandbox gateway when the payment provider environment is sandbox" do
+      payment_provider.environment = "sandbox"
       allow(Rails.env).to receive(:production?).and_return(true)
 
       session = client.page_pay_session(
@@ -68,8 +55,26 @@ RSpec.describe PaymentProviders::Alipay::Client do
       expect(session[:gateway_url]).to eq("#{PaymentProviders::Alipay::Client::SANDBOX_GATEWAY_URL}?charset=utf-8")
     end
 
-    it "uses the production gateway when LAGO_ALIPAY_ENVIRONMENT is production" do
-      ENV["LAGO_ALIPAY_ENVIRONMENT"] = "production"
+    it "uses the production gateway when the payment provider environment is production" do
+      payment_provider.environment = "production"
+
+      session = client.page_pay_session(
+        biz_content: {
+          out_trade_no: "invoice-1",
+          total_amount: "10.00",
+          subject: "Invoice 1",
+          product_code: "FAST_INSTANT_TRADE_PAY"
+        },
+        notify_url: "https://example.com/notify",
+        return_url: "https://example.com/return"
+      )
+
+      expect(session[:gateway_url]).to eq("#{PaymentProviders::Alipay::Client::PRODUCTION_GATEWAY_URL}?charset=utf-8")
+    end
+
+    it "uses the legacy environment for an existing unconfigured payment provider" do
+      payment_provider.settings = payment_provider.settings.except("environment")
+      stub_const("ENV", ENV.to_h.merge("LAGO_ALIPAY_ENVIRONMENT" => "production"))
 
       session = client.page_pay_session(
         biz_content: {

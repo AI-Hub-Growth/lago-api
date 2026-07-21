@@ -5,6 +5,7 @@ module PaymentProviders
     AlipayPayment = Data.define(:id, :status, :metadata, :amount_cents)
 
     SUCCESS_REDIRECT_URL = "https://www.alipay.com/"
+    ENVIRONMENTS = %w[sandbox production].freeze
     PAYMENT_MODES = %w[checkout].freeze
 
     PROCESSING_STATUSES = %w[WAIT_BUYER_PAY].freeze
@@ -14,14 +15,19 @@ module PaymentProviders
     validates :app_id, presence: true
     validates :app_private_key, presence: true
     validates :alipay_public_key, presence: true
+    validates :environment, inclusion: {in: ENVIRONMENTS}
     validates :payment_mode, inclusion: {in: PAYMENT_MODES}
     validates :success_redirect_url, url: true, allow_nil: true, length: {maximum: 1024}
 
     secrets_accessors :app_id, :app_private_key, :alipay_public_key
-    settings_accessors :payment_mode
+    settings_accessors :environment, :payment_mode
 
     def payment_type
       "alipay"
+    end
+
+    def environment
+      get_from_settings("environment").presence || legacy_environment || default_environment
     end
 
     def payment_mode
@@ -41,6 +47,16 @@ module PaymentProviders
       encoded_session = Base64.urlsafe_encode64(JSON.generate(session))
 
       "#{URI.join(ENV["LAGO_API_URL"], "payment_providers/alipay/checkouts")}?session=#{encoded_session}"
+    end
+
+    private
+
+    def legacy_environment
+      ENV["LAGO_ALIPAY_ENVIRONMENT"].to_s.downcase.presence_in(ENVIRONMENTS)
+    end
+
+    def default_environment
+      Rails.env.production? ? "production" : "sandbox"
     end
   end
 end

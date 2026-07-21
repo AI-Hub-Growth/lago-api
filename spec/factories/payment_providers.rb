@@ -92,13 +92,14 @@ FactoryBot.define do
     end
 
     settings do
-      {success_redirect_url:}
+      {environment:, success_redirect_url:}
     end
 
     transient do
       app_id { "2021000000000000" }
       app_private_key { OpenSSL::PKey::RSA.generate(2048).to_pem }
       alipay_public_key { OpenSSL::PKey::RSA.generate(2048).public_key.to_pem }
+      environment { "sandbox" }
       success_redirect_url { Faker::Internet.url }
     end
   end

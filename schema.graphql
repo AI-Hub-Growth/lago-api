@@ -357,6 +357,24 @@ input AddAdyenPaymentProviderInput {
 }
 
 """
+Alipay input arguments
+"""
+input AddAlipayPaymentProviderInput {
+  alipayPublicKey: String!
+  appId: String!
+  appPrivateKey: String!
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+  code: String!
+  environment: AlipayEnvironmentEnum
+  name: String!
+  successRedirectUrl: String
+}
+
+"""
 Cashfree input arguments
 """
 input AddCashfreePaymentProviderInput {
@@ -615,6 +633,22 @@ enum AlertTypeEnum {
   wallet_credits_balance
   wallet_credits_ongoing_balance
   wallet_ongoing_balance_amount
+}
+
+enum AlipayEnvironmentEnum {
+  production
+  sandbox
+}
+
+type AlipayProvider {
+  alipayPublicKey: ObfuscatedString
+  appId: String
+  appPrivateKey: ObfuscatedString
+  code: String!
+  environment: AlipayEnvironmentEnum!
+  id: ID!
+  name: String!
+  successRedirectUrl: String
 }
 
 type AnrokCustomer {
@@ -4310,6 +4344,7 @@ type CurrentOrganization {
   addressLine1: String
   addressLine2: String
   adyenPaymentProviders: [AdyenProvider!]
+  alipayPaymentProviders: [AlipayProvider!]
   apiKey: String
   appliedDunningCampaign: DunningCampaign
   authenticatedMethod: AuthenticationMethodsEnum!
@@ -7210,6 +7245,16 @@ type Mutation {
   ): AdyenProvider
 
   """
+  Add or update Alipay payment provider
+  """
+  addAlipayPaymentProvider(
+    """
+    Parameters for AddAlipayPaymentProvider
+    """
+    input: AddAlipayPaymentProviderInput!
+  ): AlipayProvider
+
+  """
   Add or update Cashfree payment provider
   """
   addCashfreePaymentProvider(
@@ -8554,6 +8599,16 @@ type Mutation {
   ): AdyenProvider
 
   """
+  Update Alipay payment provider
+  """
+  updateAlipayPaymentProvider(
+    """
+    Parameters for UpdateAlipayPaymentProvider
+    """
+    input: UpdateAlipayPaymentProviderInput!
+  ): AlipayProvider
+
+  """
   Update Anrok integration
   """
   updateAnrokIntegration(
@@ -9389,7 +9444,7 @@ enum PaymentMethodTypeEnum {
   provider
 }
 
-union PaymentProvider = AdyenProvider | CashfreeProvider | FlutterwaveProvider | GocardlessProvider | MoneyhashProvider | StripeProvider
+union PaymentProvider = AdyenProvider | AlipayProvider | CashfreeProvider | FlutterwaveProvider | GocardlessProvider | MoneyhashProvider | StripeProvider
 
 """
 PaymentProviderCollection type
@@ -10066,6 +10121,7 @@ enum ProviderPaymentMethodsEnum {
 
 enum ProviderTypeEnum {
   adyen
+  alipay
   cashfree
   flutterwave
   gocardless
@@ -12747,6 +12803,25 @@ input UpdateAdyenPaymentProviderInput {
   name: String
   successRedirectUrl: String
   supports3ds: Boolean
+}
+
+"""
+Alipay update input arguments
+"""
+input UpdateAlipayPaymentProviderInput {
+  alipayPublicKey: String
+  appId: String
+  appPrivateKey: String
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+  code: String
+  environment: AlipayEnvironmentEnum
+  id: ID!
+  name: String
+  successRedirectUrl: String
 }
 
 """

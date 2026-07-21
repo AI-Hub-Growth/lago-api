@@ -24,6 +24,7 @@ module PaymentProviders
       alipay_provider.app_id = args[:app_id] if args.key?(:app_id)
       alipay_provider.app_private_key = args[:app_private_key] if args.key?(:app_private_key)
       alipay_provider.alipay_public_key = args[:alipay_public_key] if args.key?(:alipay_public_key)
+      alipay_provider.environment = args[:environment] if args.key?(:environment)
       alipay_provider.payment_mode = "checkout"
       alipay_provider.success_redirect_url = args[:success_redirect_url] if args.key?(:success_redirect_url)
       alipay_provider.code = args[:code] if args.key?(:code)

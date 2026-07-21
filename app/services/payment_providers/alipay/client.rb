@@ -86,7 +86,7 @@ module PaymentProviders
 
       attr_reader :payment_provider
 
-      delegate :app_id, :app_private_key, :alipay_public_key, to: :payment_provider
+      delegate :app_id, :app_private_key, :alipay_public_key, :environment, to: :payment_provider
 
       def post_api(method:, response_key:, biz_content:)
         response = http_client.post_url_encoded(
@@ -165,13 +165,11 @@ module PaymentProviders
       end
 
       def gateway_url
-        case ENV["LAGO_ALIPAY_ENVIRONMENT"].to_s.downcase
+        case environment
         when "sandbox"
           SANDBOX_GATEWAY_URL
         when "production"
           PRODUCTION_GATEWAY_URL
-        else
-          Rails.env.production? ? PRODUCTION_GATEWAY_URL : SANDBOX_GATEWAY_URL
         end
       end
 
